@@ -1,0 +1,21 @@
+{
+	"name": "hc-tools",
+	"version": "0.1.0",
+	"description": "An aggregator that collects tools that Hack Clubbers have made.",
+	"main": "index.js",
+	"scripts": {
+		"start": "babel-node index.js",
+		"develop": "babel-watch index.js"
+	},
+	"author": "Yuto Nishida <yuyu.nishida@gmail.com>",
+	"license": "MIT",
+	"dependencies": {
+		"@babel/core": "^7.11.1",
+		"@babel/node": "^7.10.5",
+		"@babel/preset-env": "^7.11.0",
+		"@slack/bolt": "^2.2.3",
+		"axios": "^0.19.2",
+		"babel-watch": "^7.0.0",
+		"dotenv": "^8.2.0"
+	}
+}
