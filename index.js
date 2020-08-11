@@ -42,10 +42,11 @@ app.message("!ping", async ({ message, say }) => {
 	await say(`Pong! <@${message.user}>`);
 });
 
-// List of blacklisted reactor user ID's
-const blacklist = [];
+// List of reactor user ID's
+const blacklist = []; //For adding tools
+const whitelist = [process.env.REACTION_WHITELIST_OWNER]; //For deleting tools
 
-app.event("reaction_added", async ({ event }) => {
+app.event("reaction_added", async ({ event, ack }) => {
 	//item_user is user id of message, user is user id of reactor
 	const { reaction, item, item_user, user } = event;
 	const { message, channel, ts } = item;
@@ -80,6 +81,7 @@ app.event("reaction_added", async ({ event }) => {
 
 		switch (reaction) {
 			case reactions[0]:
+				//Count only the non-blacklisted reactors
 				const toolReactionGroup = msg.messages[0].reactions.find(reactionGroup => reactionGroup.name === reactions[0]);
 				const legitimateReactors = toolReactionGroup.users.filter(user => !blacklist.includes(user));
 
@@ -93,16 +95,17 @@ app.event("reaction_added", async ({ event }) => {
 							username: author.profile.display_name || author.profile.real_name,
 							//unfurl_links: true,
 							unfurl_media: true,
-							attachments: msg.messages[0].files.map(file => ({
-								type: "image",
-								title: {
-									type: "plain_text",
-									text: file.title,
-									emoji: true,
-								},
-								image_url: file.url_private,
-								alt_text: file.name,
-							})),
+							attachments:
+								msg.messages[0].files?.map(file => ({
+									type: "image",
+									title: {
+										type: "plain_text",
+										text: file.title,
+										emoji: true,
+									},
+									image_url: file.url_private,
+									alt_text: file.name,
+								})) || null,
 						})
 						.then(res => {
 							fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} adds tool ${ts} in ${channel}`);
@@ -126,6 +129,16 @@ app.event("reaction_added", async ({ event }) => {
 
 				break;
 			case reactions[1]:
+				//Check that user is in whitelist
+				if (!whitelist.includes(user)) {
+					fancyLog(
+						`User @ ${
+							reactor.profile.display_name || reactor.profile.real_name
+						} tried to delete message ${ts}, but is not whitelisted.`
+					);
+					break;
+				}
+
 				await app.client.chat
 					.delete({
 						token: process.env.SLACK_BOT_TOKEN,
