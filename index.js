@@ -41,10 +41,16 @@ app.message("!ping", async ({ message, say }) => {
 	await say(`Pong! <@${message.user}>`);
 });
 
+// List of blacklisted reactor user ID's
+const blacklist = [];
+
 app.event("reaction_added", async ({ event }) => {
 	//item_user is user id of message, user is user id of reactor
 	const { reaction, item, item_user, user } = event;
 	const { message, channel, ts } = item;
+
+	// Ignore blacklisted user
+	if (blacklist.includes(user)) return;
 
 	//List of meaningul reactions
 	const reactions = [process.env.REACTION_ADD_TOOL, process.env.REACTION_DEL_TOOL];
@@ -73,28 +79,60 @@ app.event("reaction_added", async ({ event }) => {
 
 		switch (reaction) {
 			case reactions[0]:
-				fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} adds a tool from ${ts} in ${channel}`);
-				app.client.chat
-					.postMessage({
-						token: process.env.SLACK_BOT_TOKEN,
-						channel: process.env.SLACK_TOOLS_CHANNEL,
-						text: msg.messages[0].text,
-						icon_url: author.profile.image_original || author.profile.image_512,
-						username: author.profile.display_name || author.profile.real_name,
-						//unfurl_links: true,
-						unfurl_media: true,
-					})
-					.catch(err => fancyLog(err));
+				const toolReactionGroup = msg.messages[0].reactions.find(reactionGroup => reactionGroup.name === reactions[0]);
+				const legitimateReactors = toolReactionGroup.users.filter(user => !blacklist.includes(user));
+
+				if (legitimateReactors.length === 1) {
+					await app.client.chat
+						.postMessage({
+							token: process.env.SLACK_BOT_TOKEN,
+							channel: process.env.SLACK_TOOLS_CHANNEL,
+							text: msg.messages[0].text,
+							icon_url: author.profile.image_original || author.profile.image_512,
+							username: author.profile.display_name || author.profile.real_name,
+							//unfurl_links: true,
+							unfurl_media: true,
+						})
+						.then(res => {
+							fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} adds tool ${ts} in ${channel}`);
+						})
+						.catch(err =>
+							fancyLog(
+								new Error(
+									`${err.message}. User @ ${
+										reactor.profile.display_name || reactor.profile.real_name
+									} tries to add tool ${ts} in ${channel}, but failed.`
+								)
+							)
+						);
+				} else {
+					fancyLog(
+						`User @ ${
+							reactor.profile.display_name || reactor.profile.real_name
+						} tries to add tool ${ts} in ${channel}, but isn't the first one to add this message so is rejected.`
+					);
+				}
+
 				break;
 			case reactions[1]:
-				fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} deletes message ${ts}`);
-				app.client.chat
+				await app.client.chat
 					.delete({
 						token: process.env.SLACK_BOT_TOKEN,
 						channel: process.env.SLACK_TOOLS_CHANNEL,
 						ts,
 					})
-					.catch(err => fancyLog(err));
+					.then(res => {
+						fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} deletes message ${ts}`);
+					})
+					.catch(err =>
+						fancyLog(
+							new Error(
+								`${err.message}. User @ ${
+									reactor.profile.display_name || reactor.profile.real_name
+								} tried to delete message ${ts}, but failed.`
+							)
+						)
+					);
 				break;
 		}
 	} catch (err) {
