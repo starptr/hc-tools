@@ -6,6 +6,7 @@ const { App } = require("@slack/bolt");
 const app = new App({
 	token: process.env.SLACK_BOT_TOKEN,
 	signingSecret: process.env.SLACK_SIGNING_SECRET,
+	endpoints: process.env.SLACK_REQUEST_ENDPOINT || "/chomp/events",
 });
 
 const fancyLog = (msg, channel = process.env.SLACK_LOG_CHANNEL) => {
