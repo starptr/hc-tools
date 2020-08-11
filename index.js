@@ -142,7 +142,7 @@ app.event("reaction_added", async ({ event }) => {
 
 (async () => {
 	// Start your app
-	await app.start(process.env.PORT || 3000);
+	await app.start(process.env.PORT || 3003);
 
 	fancyLog("⚡️ Bolt app is running!");
 })();
