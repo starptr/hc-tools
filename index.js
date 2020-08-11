@@ -93,6 +93,16 @@ app.event("reaction_added", async ({ event }) => {
 							username: author.profile.display_name || author.profile.real_name,
 							//unfurl_links: true,
 							unfurl_media: true,
+							attachments: msg.messages[0].files.map(file => ({
+								type: "image",
+								title: {
+									type: "plain_text",
+									text: file.title,
+									emoji: true,
+								},
+								image_url: file.url_private,
+								alt_text: file.name,
+							})),
 						})
 						.then(res => {
 							fancyLog(`User @ ${reactor.profile.display_name || reactor.profile.real_name} adds tool ${ts} in ${channel}`);
