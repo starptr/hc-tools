@@ -23,3 +23,10 @@ REACTION_WHITELIST_OWNER=
   - `REACTION_WHITELIST_OWNER` is the user ID of the user that should have permission to delete posts in `SLACK_TOOLS_CHANNEL`.
   
 2. Optionally, define `SLACK_REQUEST_ENDPOINT` to change the Slack event subscription endpoint.
+3. Run these:
+
+```
+$ yarn install
+$ yarn build
+$ yarn deploy
+```
